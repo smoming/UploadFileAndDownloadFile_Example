@@ -13,6 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 
 @RestController
 @RequestMapping("/file")
@@ -43,22 +44,43 @@ public class FileController {
     return getResponseEntity(model.getId() + ":" + model.getName());
   }
 
+  @GetMapping("/download_file_3")
+  public ResponseEntity<String> downloadGetByBase64(@RequestParam("param") String model) {
+    return new ResponseEntity<String>(toBase64(getFileByteArray(model)), HttpStatus.OK);
+  }
+
   private ResponseEntity<byte[]> getResponseEntity(String content) {
     ResponseEntity<byte[]> result = null;
-    String fileName = "download_test.txt";
+    String fileName = "download_terminal_test.txt";
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentDispositionFormData("attachment", fileName);
+    headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+    result = new ResponseEntity<>(getFileByteArray(content), headers, HttpStatus.OK);
+
+    return result;
+  }
+
+  private byte[] getFileByteArray(String content) {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try {
       baos.write(content.getBytes(StandardCharsets.UTF_8));
       baos.flush();
       baos.close();
-
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentDispositionFormData("attachment", fileName);
-      headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-      result = new ResponseEntity<>(baos.toByteArray(), headers, HttpStatus.OK);
     } catch (IOException e) {
       e.printStackTrace();
     }
-    return result;
+    return baos.toByteArray();
+  }
+
+  private String toBase64(byte[] fileByteArray) {
+    String encodeBase64 = null;
+    encodeBase64 =
+        "data:"
+            + MediaType.TEXT_PLAIN_VALUE
+            + ";base64,"
+            + Base64.getEncoder().encodeToString(fileByteArray);
+    // encodeBase64 = Base64.getEncoder().encodeToString(fileByteArray);
+    return encodeBase64;
   }
 }
